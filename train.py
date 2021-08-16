@@ -1,4 +1,6 @@
-"""Train a YOLOv5 model on a custom dataset
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Train a YOLOv5 model on a custom dataset
 
 Usage:
     $ python path/to/train.py --data coco128.yaml --weights yolov5s.pt --img 640
@@ -6,6 +8,7 @@ Usage:
 
 import argparse
 import logging
+import math
 import os
 import random
 import sys
@@ -13,7 +16,6 @@ import time
 from copy import deepcopy
 from pathlib import Path
 
-import math
 import numpy as np
 import torch
 import torch.distributed as dist
@@ -204,7 +206,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                               hyp=hyp, augment=True, cache=opt.cache, rect=opt.rect, rank=RANK,
                                               workers=workers, image_weights=opt.image_weights, quad=opt.quad,
                                               prefix=colorstr('train: '))
-    mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
+    mlc = int(np.concatenate(dataset.labels, 0)[:, 0].max())  # max label class
     nb = len(train_loader)  # number of batches
     assert mlc < nc, f'Label class {mlc} exceeds nc={nc} in {data}. Possible class labels are 0-{nc - 1}'
 
@@ -491,7 +493,7 @@ def main(opt):
         assert not opt.sync_bn, '--sync-bn known training issue, see https://github.com/ultralytics/yolov5/issues/3998'
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device('cuda', LOCAL_RANK)
-        dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo", timeout=timedelta(seconds=60))
+        dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
 
     # Train
     if not opt.evolve:
