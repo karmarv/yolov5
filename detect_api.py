@@ -21,8 +21,8 @@ from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages, letterbox
 from utils.general import check_img_size, check_requirements, check_imshow, colorstr, non_max_suppression, \
     apply_classifier, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
-from utils.plots import plot_one_box
-from utils.torch_utils import select_device, load_classifier, time_synchronized
+from utils.plots import colors, plot_one_box
+from utils.torch_utils import select_device, load_classifier, time_sync
 
 device, model, class_names = 'cpu', None, None # cuda device, i.e. 0 or 0,1,2,3 or cpu
 """ Initialize the model weights """
@@ -81,6 +81,7 @@ def detect( image,
             augment=False,          # augmented inference
             ):
     global device, model, class_names
+    t1 = time_sync()
     # Prepare image
     image_names = []
     img0s, img_hw0s, imgs = [], [], []
@@ -100,7 +101,6 @@ def detect( image,
     
     # Process
     preds, formatted_results = [], []
-    t0 = time.time()
     for path, img0, img_hw0, img in zip(image_names, img0s, img_hw0s, imgs):
         stride = int(model.stride.max())  # model stride
         imgsz = check_img_size(imgsz, s=stride)  # check image size
@@ -109,15 +109,16 @@ def detect( image,
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
         if img.ndimension() == 3:
             img = img.unsqueeze(0)
+        t2 = time_sync()
         # Inference
-        t1 = time_synchronized()
         pred = model(img, augment=augment)[0]
+        t3 = time_sync() 
         # Apply NMS
         pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms)
-        elapsed = time_synchronized() - t1
         formatted_results.append(format_detect_result(path, img0, img, pred, class_names))
-        print('Time [Inference + NMS]: (%.3fs)' % (elapsed))
-    print("\nAll Detections: {}".format(formatted_results))
+        # Print time (inference + NMS)
+        t4 = time_sync()
+        print('Prep:{0:3.1f}ms,\t  Infr:{1:3.1f}ms,\t  Post:{2:3.1f}ms, \t\t {3} detections in {4:3.1f}ms'.format((t2-t1)*1000, (t3-t2)*1000, (t4-t3)*1000, len(formatted_results), (t4-t1)*1000))
     return formatted_results
     
 @torch.no_grad()
@@ -148,20 +149,21 @@ def stream( source="http://192.168.4.25:8080/video",   # file/dir/URL/glob, 0 fo
     formatted_results = []
     t0 = time.time()
     for path, img, im0s, vid_cap in dataset:
-        
+        t1 = time_sync()
         imgsz = check_img_size(imgsz, s=stride)  # check image size
         img = torch.from_numpy(img).to(device)
         img = img.float()  # uint8 to fp16/32
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
         if img.ndimension() == 3:
             img = img.unsqueeze(0)
+        t2 = time_sync()
+        
         # Inference
-        t1 = time_synchronized()
         pred = model(img, augment=augment)[0]
+        t3 = time_sync() 
+        
         # Apply NMS
         pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
-        elapsed = time_synchronized() - t1
-        
         # Process predictions
         for i, det in enumerate(pred):  # detections per image
             p, s, im0, frame = path[i], f'{i}: ', im0s[i].copy(), dataset.count
@@ -183,16 +185,15 @@ def stream( source="http://192.168.4.25:8080/video",   # file/dir/URL/glob, 0 fo
                     if view_img:  # Add bbox to image
                         c = int(cls)  # integer class
                         label = f'{class_names[c]} {conf:.2f}'
-                        plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_thickness=line_thickness)
+                        im0 = plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_width=line_thickness)
 
             # Print time (inference + NMS)
-            print('Time [Inference + NMS]: (%.3fs)' % (elapsed))
+            t4 = time_sync()
+            print('Prep:{0:3.1f}ms,\t  Infr:{1:3.1f}ms,\t  Post:{2:3.1f}ms, \t\t {3} detections in {4:3.1f}ms'.format((t2-t1)*1000, (t3-t2)*1000, (t4-t3)*1000, len(det), (t4-t1)*1000))
         # Stream results
         if view_img:
             cv2.imshow(str(p), im0)
             cv2.waitKey(1)  # 1 millisecond
-
-        print(f'Done. ({time.time() - t0:.3f}s)')
     return pred
 
 
