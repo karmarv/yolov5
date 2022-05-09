@@ -1,0 +1,79 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# COCO128 dataset https://www.kaggle.com/ultralytics/coco128 (first 128 images from COCO train2017) by Ultralytics
+# Example usage: python train.py --data coco128.yaml
+# parent
+# ├── yolov5
+# └── datasets
+#     └── coco128  ← downloads here (7 MB)
+
+
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: data/datasets/aiscore_images  # dataset root dir
+train: images/train    # train images (relative to 'path') 128 images
+val: images/validation # val images (relative to 'path') 128 images
+test: images/test      # test images (optional)
+
+# Classes
+nc: 56  # number of classes
+names: [
+  'CL',
+  'CC',
+  'FL',
+  'FC',
+  'RFJ',
+  'RMJ',
+  'RBJ',
+  'RBC',
+  'DAE',
+  'DAE10To20',
+  'DAE20To30',
+  'DAEAbove30',
+  'DAGS',
+  'DAGS10To20',
+  'DAGS20To30',
+  'DAGSAbove30',
+  'DSZ',
+  'DSZ10To20',
+  'DSZ20To30',
+  'DSZAbove30',
+  'TFA',
+  'TFI',
+  'OBZ',
+  'OBZ10To20',
+  'OBZ20To30',
+  'OBZAbove30',
+  'JOL',
+  'JOM',
+  'SRV',
+  'ISSRH',
+  'INFIL',
+  'TFC',
+  'CH',
+  'CM',
+  'FH',
+  'FM',
+  'TFD',
+  'AMH',
+  'MSA',
+  'CH2',
+  'CH3',
+  'CH4',
+  'FH2',
+  'FH3',
+  'FH4',
+  'LATERAL',
+  'B',
+  'DFBR',
+  'MWL',
+  'DFE',
+  'DR', 
+  'X',
+  'SRI', 
+  'SAP', 
+  'L', 
+  'SCP'
+]  # class names
+
+
+# Download script/URL (optional)
+download: 
